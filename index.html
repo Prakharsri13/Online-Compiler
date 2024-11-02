@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Code Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="codemirror-5.65.18/lib/codemirror.css">
+    <script src="codemirror-5.65.18/mode/python/python.js"></script>
+    <script src="codemirror-5.65.18/lib/codemirror.js"></script>
+    <script src="codemirror-5.65.18/mode/clike/clike.js"></script>
+    <link rel="stylesheet" href="codemirror-5.65.18/theme/midnight.css">
+    <script src="codemirror-5.65.18/addon/edit/closebrackets.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+    <style>
+        /* Container height based on viewport */
+        .editor-container {
+            height: 65vh;
+            overflow-y: auto;
+        }
+
+        .input-output-container {
+            height: 65vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Flex layout for input/output */
+        .input-output-container .box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+
+            .editor-container,
+            .input-output-container {
+                height: 50vh;
+            }
+        }
+
+        @media (max-width: 576px) {
+
+            .editor-container,
+            .input-output-container {
+                height: 45vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid my-3">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex flex-wrap justify-content-between mb-2 bg-dark rounded p-2">
+                    <div class="col-12 col-md-3 mb-2 mb-md-0">
+                        <label class="visually-hidden" for="inlineFormSelectPref">Language</label>
+                        <select class="form-select" id="inlineFormSelectPref">
+                            <option selected><strong>Languages</strong></option>
+                            <option value="Java">Java</option>
+                            <option value="Cpp">Cpp</option>
+                            <option value="Python">Python</option>
+                        </select>
+                    </div>
+                    <div class="d-flex">
+                        <button type="button" class="btn btn-success me-2"> @ RUN</button>
+                        <button type="button" id="run" class="btn btn-success"><i class="bi bi-play-fill"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Editor Section -->
+            <div class="col-12 col-lg-6 editor-container">
+                <textarea id="editor" class="form-control" aria-label="Code Editor"></textarea>
+            </div>
+
+            <!-- Input/Output Section -->
+            <div class="col-12 col-lg-6 input-output-container">
+                <div class="box bg-dark rounded p-3">
+                    <label for="input" class="text-light">Input</label>
+                    <textarea id="input" class="form-control h-100" aria-label="Input"></textarea>
+                </div>
+                <div class="box bg-dark rounded p-3">
+                    <label for="output" class="text-light">Output</label>
+                    <textarea id="output" class="form-control h-100" aria-label="Output"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+        mode: "text/x-c++src",
+        theme: "midnight",
+        lineNumbers: true,
+        autoCloseBrackets: true,
+    });
+
+    function adjustEditorSize() {
+        editor.setSize("100%", "65vh"); // Set editor to 65% of viewport height
+    }
+
+    window.addEventListener('resize', adjustEditorSize);
+    adjustEditorSize(); // Initial call to set size based on screen
+
+    var input = document.getElementById("input");
+    var output = document.getElementById("output");
+    var run = document.getElementById("run");
+    var option = document.getElementById("inlineFormSelectPref");
+
+    option.addEventListener("change", function () {
+        if (option.value === "Java") {
+            editor.setOption("mode", "text/x-java");
+        } else if (option.value === "Python") {
+            editor.setOption("mode", "text/x-python");
+        } else {
+            editor.setOption("mode", "text/x-c++src");
+        }
+    });
+
+    run.addEventListener("click", async function () {
+        const code = {
+            code: editor.getValue(),
+            input: input.value,
+            lang: option.value
+        };
+        console.log(code);
+
+        const response = await fetch("http://localhost:8000/compile", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(code)
+        });
+
+        const data = await response.json();
+        output.value = data.output;
+    });
+</script>
+
+</html>
